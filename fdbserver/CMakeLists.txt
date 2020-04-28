@@ -100,6 +100,7 @@ set(FDBSERVER_SRCS
   WaitFailure.h
   worker.actor.cpp
   WorkerInterface.actor.h
+  workloads/AdvanceVersion.actor.cpp
   workloads/ApiCorrectness.actor.cpp
   workloads/ApiWorkload.actor.cpp
   workloads/ApiWorkload.h
