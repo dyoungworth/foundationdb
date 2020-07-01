@@ -157,7 +157,7 @@ public:
 
 	virtual void getDiskBytes( std::string const& directory, int64_t& free, int64_t& total );
 	virtual bool isAddressOnThisHost( NetworkAddress const& addr );
-	void updateNow(){ currentTime = timer_monotonic(); }
+	void updateNow(){ currentTime = 0; } // timer_monotonic(); }
 
 	virtual flowGlobalType global(int id) { return (globals.size() > id) ? globals[id] : NULL; }
 	virtual void setGlobal(size_t id, flowGlobalType v) { globals.resize(std::max(globals.size(),id+1)); globals[id] = v; }
@@ -989,7 +989,7 @@ void Net2::initTLS() {
 
 ACTOR Future<Void> Net2::logTimeOffset() {
 	loop {
-		double processTime = timer_monotonic();
+		double processTime = 0; //timer_monotonic();
 		double systemTime = timer();
 		TraceEvent("ProcessTimeOffset").detailf("ProcessTime", "%lf", processTime).detailf("SystemTime", "%lf", systemTime).detailf("OffsetFromSystemTime", "%lf", processTime - systemTime);
 		wait(::delay(FLOW_KNOBS->TIME_OFFSET_LOGGING_INTERVAL));
@@ -1049,7 +1049,7 @@ void Net2::run() {
 	runCycleFuncPtr runFunc = reinterpret_cast<runCycleFuncPtr>(reinterpret_cast<flowGlobalType>(g_network->global(INetwork::enRunCycleFunc)));
 
 	started.store(true);
-	double nnow = timer_monotonic();
+	double nnow = 0; //timer_monotonic();
 
 	while(!stopped) {
 		FDB_TRACE_PROBE(run_loop_begin);
@@ -1060,7 +1060,7 @@ void Net2::run() {
 			taskBegin = nnow;
 			trackAtPriority(TaskPriority::RunCycleFunction, taskBegin);
 			runFunc();
-			double taskEnd = timer_monotonic();
+			double taskEnd = 0; //timer_monotonic();
 			trackAtPriority(TaskPriority::RunLoop, taskEnd);
 			countLaunchTime += taskEnd - taskBegin;
 			checkForSlowTask(tscBegin, timestampCounter(), taskEnd - taskBegin, TaskPriority::RunCycleFunction);
@@ -1075,7 +1075,7 @@ void Net2::run() {
 			++countWontSleep;
 		if (b) {
 			sleepTime = 1e99;
-			double sleepStart = timer_monotonic();
+			double sleepStart = 0; timer_monotonic();
 			if (!timers.empty()) {
 				sleepTime = timers.top().at - sleepStart;  // + 500e-6?
 			}
@@ -1094,7 +1094,7 @@ void Net2::run() {
 		}
 
 		tscBegin = timestampCounter();
-		taskBegin = timer_monotonic();
+		taskBegin = 0; // timer_monotonic();
 		trackAtPriority(TaskPriority::ASIOReactor, taskBegin);
 		reactor.react();
 		
@@ -1122,7 +1122,7 @@ void Net2::run() {
 
 		tscBegin = timestampCounter();
 		tscEnd = tscBegin + FLOW_KNOBS->TSC_YIELD_TIME;
-		taskBegin = timer_monotonic();
+		taskBegin = 0; //timer_monotonic();
 		numYields = 0;
 		TaskPriority minTaskID = TaskPriority::Max;
 		int queueSize = ready.size();
@@ -1148,7 +1148,7 @@ void Net2::run() {
 			}
 
 			double tscNow = timestampCounter();
-			double newTaskBegin = timer_monotonic();
+			double newTaskBegin = 0; // timer_monotonic();
 			if (check_yield(TaskPriority::Max, tscNow)) {
 				checkForSlowTask(tscBegin, tscNow, newTaskBegin - taskBegin, currentTaskID);
 				FDB_TRACE_PROBE(run_loop_yield);
@@ -1207,7 +1207,7 @@ void Net2::run() {
 			net2RunLoopIterations.fetch_add(1);
 		}
 #endif
-		nnow = timer_monotonic();
+		nnow = 0; //timer_monotonic();
 
 		if ((nnow-now) > FLOW_KNOBS->SLOW_LOOP_CUTOFF && nondeterministicRandom()->random01() < (nnow-now)*FLOW_KNOBS->SLOW_LOOP_SAMPLING_RATE)
 			TraceEvent("SomewhatSlowRunLoopBottom").detail("Elapsed", nnow - now); // This includes the time spent running tasks
